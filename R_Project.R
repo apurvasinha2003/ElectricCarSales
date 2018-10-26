@@ -45,6 +45,20 @@ pacf(ts(autoArima_train$residuals),main='PACF Residual')
 qqnorm(autoArima_train$residuals)
 qqline(autoArima_train$residuals)
 
+#arima model
+Arima_train <- arima(Quantity_Cars_ts,order = c(2,0,1))
+#prediction of future 11 months based on training model
+electric_car_predict_arima <- forecast(Arima_train, h=11)
+plot(electric_car_predict_arima)
+#check for accuracy
+summary(electric_car_predict_arima)
+accuracy(electric_car_predict_arima)
+acf(ts(Arima_train$residuals),main='ACF Residual')
+pacf(ts(Arima_train$residuals),main='PACF Residual')
+#residual plot
+qqnorm(Arima_train$residuals)
+qqline(Arima_train$residuals)
+
 
 #forecast model using HoltWinters method for training data set
 model <- hw(Quantity_Cars_ts, initial='optimal', h=11)
