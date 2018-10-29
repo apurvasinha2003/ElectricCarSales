@@ -30,62 +30,66 @@ Qty_ts %>% diff() %>% ur.kpss() %>% summary()#after diff, trend is stationary
 Quantity_Cars_ts<- window(x = Qty_ts, start = 2011)
 plot.ts(plot.type = 'single', Quantity_Cars_ts)
 
-
+#partition
+qty_train<-window(Quantity_Cars_ts, start = 2011, c(2016,12))
+qty_train
+qty_test<- window(Quantity_Cars_ts, start = 2017, end = 2018)
+qty_test
 # dataset
-Quantity_Cars_ts %>% diff(lag=1)%>% diff(lag=12) %>% autoplot()
-Quantity_Cars_ts %>% diff(lag=1)%>% diff(lag=12) %>% ur.kpss() %>% summary()#after diff, trend is stationary
-ndiffs(Quantity_Cars_ts)
+qty_train %>% diff(lag=1)%>% diff(lag=12) %>% autoplot()
+qty_train %>% diff(lag=1)%>% diff(lag=12) %>% ur.kpss() %>% summary()#after diff, trend is stationary
+ndiffs(qty_train)
+qty_train %>% diff() %>% ggtsdisplay(main="")
 
-Quantity_Cars_ts<- diff(x = Quantity_Cars_ts,lag = 1)
-Quantity_Cars_ts<- diff(x = Quantity_Cars_ts,lag = 12)
 #plot of current scenario
-plot(Quantity_Cars_ts)
-ggAcf(Quantity_Cars_ts,main='ACF')
-ggPacf(Quantity_Cars_ts,main='PACF')
+plot(qty_train)
+ggAcf(qty_train,main='ACF')
+ggPacf(qty_train,main='PACF')
 #ARIMA model 
 
-autoArima_train <- auto.arima(Quantity_Cars_ts)
-#prediction of future 11 months based on training model
-electric_car_predict <- forecast(autoArima_train, h=11)
-plot(electric_car_predict)
+autoArima_train <- auto.arima(qty_train)
+summary(autoArima_train)
+
+plot(autoArima_train)
 #check for accuracy
-summary(electric_car_predict)
-accuracy(electric_car_predict)
-acf(ts(autoArima_train$residuals),main='ACF Residual')
-pacf(ts(autoArima_train$residuals),main='PACF Residual')
-#residual plot
-qqnorm(autoArima_train$residuals)
-qqline(autoArima_train$residuals)
+
+accuracy(autoArima_train)
+
+#check residual
 checkresiduals(autoArima_train)
 
 #arima model
-Arima_train <- arima(Quantity_Cars_ts,order = c(1,0,1))
-#prediction of future 11 months based on training model
-electric_car_predict_arima <- forecast(Arima_train, h=11)
-plot(electric_car_predict_arima)
+qty_train<- diff(x = qty_train,lag = 12)
+qty_test<- diff(x = qty_test,lag = 12)
+
+Arima_train <- arima(qty_train,order = c(2,1,2))
+
+plot(Arima_train)
 #check for accuracy
-summary(electric_car_predict_arima)
-accuracy(electric_car_predict_arima)
-acf(ts(Arima_train$residuals),main='ACF Residual')
-pacf(ts(Arima_train$residuals),main='PACF Residual')
-#residual plot
-qqnorm(Arima_train$residuals)
-qqline(Arima_train$residuals)
+summary(Arima_train)
+accuracy(Arima_train)
+
+#check residual
 checkresiduals(Arima_train)
 
 #forecast model using HoltWinters method for training data set
-model <- hw(Quantity_Cars_ts, initial='optimal', h=11)
+model <- hw(qty_train, initial='optimal', h=11)
 plot(model)
 accuracy(model)
 sum(round(model$mean))  #Total sales in predicted 12 months
 summary(model)
 #acf and pacf plot for model residuals
-acf(ts(model$residuals),main='ACF Residual')
-pacf(ts(model$residuals),main='PACF Residual')
-#residual plot
-qqnorm(model$residuals)
-qqline(model$residuals)
+
 checkresiduals(model)
+
+#final prediction using auto.arima and arima
+#prediction of future 11 months based on training model auto arima
+electric_car_predict_auto <- forecast(autoArima_train, h=11)
+checkresiduals(electric_car_predict_auto)
+
+#prediction of future 11 months based on training model arima
+electric_car_predict_arima <- forecast(Arima_train, h=11)
+checkresiduals(electric_car_predict_arima)
 
 #Examine Total CO2 ------------------------------------------------------
 CO2_ts <- ts(data=norway_cars$Avg_CO2, start=2007, freq=12)
@@ -94,111 +98,114 @@ plot(CO2_ts)
 plot.ts(plot.type = 'single', CO2_ts)
 
 CO2_ts %>% diff(lag=1)%>% diff(lag=12) %>% autoplot()
+CO2_ts %>% diff() %>% ggtsdisplay(main="")
+
+
+#partition
+qty_train_co2<-window(CO2_ts, start = 2007, c(2016,12))
+qty_train_co2
+qty_test_co2<- window(CO2_ts, start = 2017, end = 2018)
+qty_test_co2
 
 #dataset
 #ARIMA model 
-co2_ts <- diff(x = CO2_ts,lag = 12)
-co2_ts<- diff(x = CO2_ts,lag = 1)
+qty_train_co2 <- diff(x = qty_train_co2,lag = 12)
+qty_test_co2<- diff(x = qty_test_co2,lag = 12)
 
 #plot of current scenario
-plot(co2_ts)
+plot(qty_train_co2)
 
-autoArima_train <- auto.arima(co2_ts)
-#prediction of future 11 months based on training model
-ArimaModel_train <- forecast(autoArima_train, h=11)
-plot(ArimaModel_train)
+autoArima_train <- auto.arima(qty_train_co2)
+
+plot(autoArima_train)
 #check for accuracy
-summary(ArimaModel_train)
-mean(ArimaModel_train$residuals)
+summary(autoArima_train)
+mean(autoArima_train$residuals)
 #acf and pacf plot for model residuals
-acf(ts(ArimaModel_train$residuals),main='ACF Residual')
-pacf(ts(ArimaModel_train$residuals),main='PACF Residual')
-#residual plot
-qqnorm(ArimaModel_train$residuals)
-qqline(ArimaModel_train$residuals)
 checkresiduals(autoArima_train)
 
 #arima model
-Arima_co2 <- arima(Quantity_Cars_ts,order = c(1,0,1))
-#prediction of future 11 months based on training model
-co2_predict_arima <- forecast(Arima_co2, h=11)
-plot(co2_predict_arima)
+Arima_co2 <- arima(qty_train_co2,order = c(1,1,2))
+
+plot(Arima_co2)
 #check for accuracy
-summary(co2_predict_arima)
-accuracy(co2_predict_arima)
-acf(ts(Arima_co2$residuals),main='ACF Residual')
-pacf(ts(Arima_co2$residuals),main='PACF Residual')
+summary(Arima_co2)
+accuracy(Arima_co2)
 #residual plot
-qqnorm(Arima_co2$residuals)
-qqline(Arima_co2$residuals)
+
 checkresiduals(Arima_co2)
 
 #forecast model using HoltWinters method for training data set
-model <- hw(co2_ts, initial='optimal', h=11)
+model <- hw(qty_train_co2, initial='optimal', h=11, alpha =0.4)
 plot(model)
 accuracy(model)
 sum(round(model$mean))  #Total CO2 in predicted 12 months
 summary(model)
+
 mean(model$residuals)
 #acf and pacf plot for model residuals
-acf(ts(model$residuals),main='ACF Residual')
-pacf(ts(model$residuals),main='PACF Residual')
-#residual plot
-qqnorm(model$residuals)
-qqline(model$residuals)
+
 checkresiduals(model)
+
+#prediction of future 11 months based on training model
+ArimaModel_train <- forecast(autoArima_train, h=11)
+checkresiduals(ArimaModel_train)
+#prediction of future 11 months based on training model
+co2_predict_arima <- forecast(Arima_co2, h=11)
+checkresiduals(co2_predict_arima)
 
 #Examine Total cars sales for 2018------------------------------------------------------
 Qty_car_ts <- ts(data=norway_cars$Quantity, start=2007, freq=12)
 plot(Qty_car_ts)
-Qty_car_ts<- diff(x= Qty_car_ts, lag = 1)
+
+Qty_car_ts %>% diff(lag=1)%>% autoplot()
+Qty_car_ts %>% diff() %>% ggtsdisplay(main="")
+
+
+#Qty_car_ts<- diff(x= Qty_car_ts, lag = 1)
 plot.ts(plot.type = 'single', Qty_car_ts)
+
+#partition
+qty_train_car<-window(Qty_car_ts, start = 2007, c(2016,12))
+qty_train_car
+qty_test_car<- window(Qty_car_ts, start = 2017, end = 2018)
+qty_test_car
 
 #dataset
 #ARIMA model 
-autoArima_train_car <- auto.arima(Qty_car_ts)
+autoArima_train_car <- auto.arima(qty_train_car)
 #prediction of future 11 months data using training model
-ArimaModel_train_car <- forecast(autoArima_train_car, h=11)
-plot(ArimaModel_train_car)
+#ArimaModel_train_car <- forecast(autoArima_train_car, h=11)
+plot(autoArima_train_car)
 #check for accuracy
-summary(ArimaModel_train_car)
-mean(ArimaModel_train_car$residuals)
+summary(autoArima_train_car)
+mean(autoArima_train_car$residuals)
 #acf and pacf plot for model residuals
-acf(ts(ArimaModel_train_car$residuals),main='ACF Residual')
-pacf(ts(ArimaModel_train_car$residuals),main='PACF Residual')
 #residual plot
-qqnorm(ArimaModel_train_car$residuals)
-qqline(ArimaModel_train_car$residuals)
+
 checkresiduals(autoArima_train_car)
 
 #arima model
-Arima_car <- arima(Quantity_Cars_ts,order = c(1,0,1))
+Arima_car <- arima(qty_train_car,order = c(6,1,0))
 #prediction of future 11 months based on training model
-car_predict_arima <- forecast(Arima_car, h=11)
-plot(car_predict_arima)
+#car_predict_arima <- forecast(Arima_car, h=11)
+plot(Arima_car)
 #check for accuracy
-summary(car_predict_arima)
-accuracy(car_predict_arima)
-acf(ts(Arima_car$residuals),main='ACF Residual')
-pacf(ts(Arima_car$residuals),main='PACF Residual')
+summary(Arima_car)
+accuracy(Arima_car)
 #residual plot
-qqnorm(Arima_car$residuals)
-qqline(Arima_car$residuals)
 checkresiduals(Arima_car)
 
 #forecast model using HoltWinters method for training data set
-model <- hw(Qty_car_ts, initial='optimal', h=11)
+model <- hw(qty_train_car, initial='optimal', h=11, alpha = 0.4)
 plot(model)
 accuracy(model)
 sum(round(model$mean))  #Total sales in predicted 12 months
 summary(model)
 mean(model$residuals)
 #acf and pacf plot for model residuals
-acf(ts(model$residuals),main='ACF Residual')
-pacf(ts(model$residuals),main='PACF Residual')
 #residual plot
-qqnorm(model$residuals)
-qqline(model$residuals)
+
 checkresiduals(model)
 
 ###Plots
